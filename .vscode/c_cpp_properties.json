@@ -1,0 +1,21 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "STM32F405RGT6 Bare Metal",
+            "includePath": [
+                "${workspaceFolder}/**",                // Incluye todo el proyecto
+                "${workspaceFolder}/Inc",               // Ruta a los encabezados de tu proyecto
+                "C:/Users/franc/Documents/WS_VSCode/STM32F405ws/Chip_headers/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+                "C:/Users/franc/Documents/WS_VSCode/STM32F405ws/Chip_headers/Drivers/CMSIS/Include"
+            ],
+            "defines": [
+                "STM32F405xx"                        // Define el microcontrolador STM32F405RGT6
+            ],
+            "cStandard": "c99",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm",                  // Configura IntelliSense para GCC ARM
+            "compilerPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gcc.exe"
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+# Ignorar carpeta de compilación
+build/
+
+
+# Ignorar carpeta generada por Doxygen
+docs/Doxyfolder/
+
+# (Opcional) Ignorar archivos generados por cscope
+cscope.out
+
+# Ignorar archivos startup
+startup/
