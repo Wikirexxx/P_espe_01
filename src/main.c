@@ -90,8 +90,8 @@ float tabla_seno[] = {
 };
 uint32_t pos = 0;
 uint8_t i = 0;
-uint16_t d = 0;
-
+uint16_t d = 300;
+uint8_t flag_cMotor = 0;
 int main(void)
 {
     SystemClock_Config();
@@ -99,16 +99,27 @@ int main(void)
     encoder_tim2_init();
     pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
 
-    
+    gpio_pa2_pa3_output_init();
+    left_motor();
+
     while (1) 
     {
-        if(d < 500)
+        if(d < 700)
         {
             d++;
         }
         else
         {
-            d = 0;
+            d = 400;
+            flag_cMotor ^= 1;
+            if (flag_cMotor)
+            {
+                right_motor();
+            }
+            else
+            {
+                left_motor();
+            }
         }
         pwm_tim1_set_duty_permille(d);
 

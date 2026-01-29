@@ -43,3 +43,22 @@ void test_TFT_pins(void)
     TFT_DC_DATA();
     Delay_loop(1000000);
 }
+void gpio_pa2_pa3_output_init(void)
+{
+    /* 1) Habilitar reloj GPIOA */
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+
+    /* 2) Modo salida (MODER = 01) */
+    GPIOA->MODER &= ~((3U << (2*2)) | (3U << (3*2)));
+    GPIOA->MODER |=  ((1U << (2*2)) | (1U << (3*2)));
+
+    /* 3) Tipo de salida: Push-Pull */
+    GPIOA->OTYPER &= ~((1U << 2) | (1U << 3));
+
+    /* 4) Velocidad: Media / Alta (elige una) */
+    GPIOA->OSPEEDR &= ~((3U << (2*2)) | (3U << (3*2)));
+    GPIOA->OSPEEDR |=  ((2U << (2*2)) | (2U << (3*2))); // medium speed
+
+    /* 5) Sin pull-up / pull-down */
+    GPIOA->PUPDR &= ~((3U << (2*2)) | (3U << (3*2)));
+}

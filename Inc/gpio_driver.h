@@ -14,8 +14,14 @@
 #define TFT_RST_LOW()   (GPIOB->BSRR = 0x01000000U)  // PB8 = 0
 #define TFT_RST_HIGH()  (GPIOB->BSRR = 0x00000100U)  // PB8 = 1
 #define TFT_RST_TOGGLE() (GPIOB->ODR ^= 0x00000100U) // PB8 toggle
+//Apaga PA2 y enciende PA3 para izquierda
+#define left_motor()  (GPIOA->BSRR = 0x00080004U)
+
+//Apaga PA3 y enciende PA2 para derecha
+#define right_motor() (GPIOA->BSRR = 0x00040008U)
 
 void TFT_ctrl_gpio_init(void);
 void test_TFT_pins(void);
+void gpio_pa2_pa3_output_init(void);
 
 #endif
