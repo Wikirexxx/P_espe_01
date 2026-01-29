@@ -6,6 +6,7 @@
 #include "gpio_driver.h"
 #include "pwm_driver.h"
 #include "ILI9341_driver.h"
+#include "quad_enc.h"
 
 uint16_t posx_act_data = 0;
 float rpmr_data = 0.0f;
@@ -87,15 +88,32 @@ float tabla_seno[] = {
     265,
     283
 };
+uint32_t pos = 0;
 uint8_t i = 0;
+uint16_t d = 0;
 
 int main(void)
 {
     SystemClock_Config();
     ini_pantalla();
+    encoder_tim2_init();
+    pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
 
+    
     while (1) 
     {
+        if(d < 500)
+        {
+            d++;
+        }
+        else
+        {
+            d = 0;
+        }
+        pwm_tim1_set_duty_permille(d);
+
+        pos = encoder_get_count(); // (void)pos; // int32_t
+        (void)pos;
         ili_draw_graph(tabla_seno[i], tabla_seno[i] + 5, time_data);
         i = i + 1;
        
