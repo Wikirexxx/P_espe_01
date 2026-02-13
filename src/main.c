@@ -7,6 +7,8 @@
 #include "pwm_driver.h"
 #include "ILI9341_driver.h"
 #include "quad_enc.h"
+//#include "matrices.h"
+#include "uart_driver.h"
 
 uint16_t posx_act_data = 0;
 float rpmr_data = 0.0f;
@@ -92,18 +94,38 @@ uint32_t pos = 0;
 uint8_t i = 0;
 uint16_t d = 300;
 uint8_t flag_cMotor = 0;
+
+typedef struct{
+    uint8_t a;
+    uint8_t b;
+    uint8_t c;
+    uint8_t d;
+} ieee_754_bytes_t;
+
+typedef union {
+    float f;
+    ieee_754_bytes_t bytes;
+} ieee_754_float_t;
+
+    uint8_t out;
+    uint8_t captura[4];
+    uint8_t cont = 0;
+    uint8_t j2 = 0;
+
 int main(void)
 {
+    ieee_754_float_t captura_float;
     SystemClock_Config();
     ini_pantalla();
     encoder_tim2_init();
     pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
-
+    usart3_pb10_pb11_init_115200();
     gpio_pa2_pa3_output_init();
     left_motor();
 
     while (1) 
     {
+        /*
         if(d < 700)
         {
             d++;
@@ -138,6 +160,21 @@ int main(void)
             i = 0;
         }
         Delay_ms(50);
+        */
+        
+        if (usart3_read_byte_nonblocking(&out))
+        {
+            for (j2 = 0; j2 < 4; j2++)
+            {
+                while(!(USART3->SR & USART_SR_RXNE)){} 
+                captura[j2] = (USART3->DR & 0xFFu);
+            }
+            captura_float.bytes.d = captura[0];
+            captura_float.bytes.c = captura[1];
+            captura_float.bytes.b = captura[2];
+            captura_float.bytes.a = captura[3];   
+            
+        }
     }
 }
 void ini_pantalla(void)
