@@ -7,7 +7,7 @@
 #include "pwm_driver.h"
 #include "ILI9341_driver.h"
 #include "quad_enc.h"
-//#include "matrices.h"
+#include "mmcr.h"
 #include "uart_driver.h"
 
 uint16_t posx_act_data = 0;
@@ -94,7 +94,6 @@ uint32_t pos = 0;
 uint8_t i = 0;
 uint16_t d = 300;
 uint8_t flag_cMotor = 0;
-
 typedef struct{
     uint8_t a;
     uint8_t b;
@@ -174,6 +173,23 @@ int main(void)
             captura_float.bytes.b = captura[2];
             captura_float.bytes.a = captura[3];   
             
+            // Implementación de algoritmo de mínimos cuadrados recursivos
+
+            ut = captura_float.f;                               // ut = valor de entrada a la planta
+            build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
+            yr = producto_punto(P, z, MAX_DIMX);                // yr = salida de la planta estimada por el modelo
+            captura_float.f = yr;                                // Para enviar yr a la PC y graficarlo
+            
+            ut_k_2 = ut_k_1;
+            ut_k_1 = ut;
+            y_k_2 = y_k_1;
+            y_k_1 = yr;
+            
+            Delay_ms(10);
+            usart3_write_byte(captura_float.bytes.d);
+            usart3_write_byte(captura_float.bytes.c);
+            usart3_write_byte(captura_float.bytes.b);
+            usart3_write_byte(captura_float.bytes.a);
         }
     }
 }

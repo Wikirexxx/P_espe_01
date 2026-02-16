@@ -1,4 +1,19 @@
-#include "matrices.h"
+#include "mmcr.h"
+
+// Variables globales solo para probar algoritmo minimos cuadrados recursivos
+float P[5]={0,0.5,1,-0.6,0};
+
+float ut_k_1 = 0;
+float ut_k_2 = 0;
+float y_k_1 = 0;
+float y_k_2 = 0;
+float z[MAX_DIMX] = {0,0,0,0,0};
+float g[MAX_DIMX] = {0,0,0,0,0};
+float fhi = 0.98;
+float ye = 0;
+float e = 0;
+float yr = 0;
+float ut = 0;
 
 float producto_punto(float *a, float *b, int n) 
 {
@@ -6,7 +21,7 @@ float producto_punto(float *a, float *b, int n)
     float resultado = 0.0f;
     for (i = 0; i < n; i++) 
     {
-        resultado += a[i] * b[i];
+        resultado = resultado + (a[i] * b[i]);
     }
     return resultado;
 }
