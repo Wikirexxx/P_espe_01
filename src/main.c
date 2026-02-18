@@ -10,6 +10,9 @@
 #include "mmcr.h"
 #include "uart_driver.h"
 
+void FPU_Enable(void);
+void clear_fault_flags(void);
+
 uint16_t posx_act_data = 0;
 float rpmr_data = 0.0f;
 float rpme_data = 0.0f;
@@ -114,12 +117,16 @@ typedef union {
 int main(void)
 {
     ieee_754_float_t captura_float;
+    clear_fault_flags();
+    FPU_Enable();
+    volatile uint32_t cpacr = SCB->CPACR;
     SystemClock_Config();
     ini_pantalla();
     encoder_tim2_init();
     pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
     usart3_pb10_pb11_init_115200();
     gpio_pa2_pa3_output_init();
+    crear_C(C);
     left_motor();
 
     while (1) 
@@ -178,18 +185,34 @@ int main(void)
             ut = captura_float.f;                               // ut = valor de entrada a la planta
             build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
             yr = producto_punto(P, z, MAX_DIMX);                // yr = salida de la planta estimada por el modelo
-            captura_float.f = yr;                                // Para enviar yr a la PC y graficarlo
             
             ut_k_2 = ut_k_1;
             ut_k_1 = ut;
             y_k_2 = y_k_1;
             y_k_1 = yr;
             
+            multiplicar_matriz_vector(C, z, g);
+            zgpp = producto_punto(z, g, MAX_DIMX);
+            alfa2 = fhi * fhi + zgpp;
+            ye = producto_punto(Pe, z, MAX_DIMX);
+            e = yr - ye;
+            for (i = 0; i < MAX_DIMX; i++) 
+            {
+                Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
+            }
+            actualizar_C(C, g, fhi, alfa2);
+            
             Delay_ms(10);
+            captura_float.f = yr; 
             usart3_write_byte(captura_float.bytes.d);
             usart3_write_byte(captura_float.bytes.c);
             usart3_write_byte(captura_float.bytes.b);
             usart3_write_byte(captura_float.bytes.a);
+            captura_float.f = ye;
+            usart3_write_byte(captura_float.bytes.d);
+            usart3_write_byte(captura_float.bytes.c);
+            usart3_write_byte(captura_float.bytes.b);
+            usart3_write_byte(captura_float.bytes.a); 
         }
     }
 }
@@ -203,4 +226,16 @@ void ini_pantalla(void)
     ILI9341_init();
     ili_plantilla_grafica();
     ili_fill_graphs();
+}
+void FPU_Enable(void)
+{
+    SCB->CPACR |= (0xF << 20);  // Habilita CP10 y CP11 (FPU)
+    __DSB();
+    __ISB();
+}
+void clear_fault_flags(void)
+{
+    SCB->CFSR = 0xFFFFFFFF;   // limpia UFSR/BFSR/MMFSR
+    SCB->HFSR = 0xFFFFFFFF;   // limpia hardfault status (w1c)
+    SCB->DFSR = 0xFFFFFFFF;   // opcional
 }
