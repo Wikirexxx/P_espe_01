@@ -4,10 +4,6 @@
 
 void SystemClock_Config(void)
 {
-    SCB->CPACR |= 0x00F00000U;  // Habilita CP10 y CP11 (FPU)
-    __DSB();
-    __ISB();
-
     // 1. Activar HSE (High Speed External clock)
     RCC->CR |= RCC_CR_HSEON;
     while (!(RCC->CR & RCC_CR_HSERDY));  // Esperar a que esté listo
