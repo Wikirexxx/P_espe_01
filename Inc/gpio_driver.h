@@ -20,8 +20,17 @@
 //Apaga PA3 y enciende PA2 para derecha
 #define right_motor() (GPIOA->BSRR = 0x00040008U)
 
+// Led RGB en PB12, PB13, PB14
+#define LED_R_ON()    (GPIOB->BSRR = 0x00001000U)  // SET  PB12
+#define LED_R_OFF()   (GPIOB->BSRR = 0x10000000U)  // RST  PB12
+#define LED_G_ON()    (GPIOB->BSRR = 0x00002000U)  // SET  PB13
+#define LED_G_OFF()   (GPIOB->BSRR = 0x20000000U)  // RST  PB13
+#define LED_B_ON()    (GPIOB->BSRR = 0x00004000U)  // SET  PB14
+#define LED_B_OFF()   (GPIOB->BSRR = 0x40000000U)  // RST  PB14
+
 void TFT_ctrl_gpio_init(void);
 void test_TFT_pins(void);
+void GPIOB_Init_PB12_13_14_Output(void);
 void gpio_pa2_pa3_output_init(void);
 
 #endif

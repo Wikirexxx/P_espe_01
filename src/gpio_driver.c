@@ -43,6 +43,40 @@ void test_TFT_pins(void)
     TFT_DC_DATA();
     Delay_loop(1000000);
 }
+void GPIOB_Init_PB12_13_14_Output(void)
+{
+    /* 1) Habilitar reloj de GPIOB (AHB1) */
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+    (void)RCC->AHB1ENR;   // lectura dummy para asegurar el habilitado
+
+    /* 2) Modo: Output (01) para PB12, PB13, PB14 */
+    // Limpiar bits MODER: (2 bits por pin)
+    GPIOB->MODER &= ~((3U << (12U*2U)) |
+                      (3U << (13U*2U)) |
+                      (3U << (14U*2U)));
+    // Poner 01
+    GPIOB->MODER |=  ((1U << (12U*2U)) |
+                      (1U << (13U*2U)) |
+                      (1U << (14U*2U)));
+
+    /* 3) Tipo de salida: Push-Pull (0) */
+    GPIOB->OTYPER &= ~((1U << 12U) |
+                       (1U << 13U) |
+                       (1U << 14U));
+
+    /* 4) Velocidad: Medium (01) (ajusta si quieres High/VeryHigh) */
+    GPIOB->OSPEEDR &= ~((3U << (12U*2U)) |
+                        (3U << (13U*2U)) |
+                        (3U << (14U*2U)));
+    GPIOB->OSPEEDR |=  ((1U << (12U*2U)) |
+                        (1U << (13U*2U)) |
+                        (1U << (14U*2U)));
+
+    /* 5) Pull-up/Pull-down: None (00) */
+    GPIOB->PUPDR &= ~((3U << (12U*2U)) |
+                      (3U << (13U*2U)) |
+                      (3U << (14U*2U)));
+}
 void gpio_pa2_pa3_output_init(void)
 {
     /* 1) Habilitar reloj GPIOA */

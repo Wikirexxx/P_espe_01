@@ -90,7 +90,7 @@ float tabla_seno[] = {
 };
 uint32_t pos = 0;
 uint8_t i = 0;
-uint16_t d = 300;
+uint16_t d = 400;
 uint8_t flag_cMotor = 0;
 int main(void)
 {
@@ -100,10 +100,14 @@ int main(void)
     pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
 
     gpio_pa2_pa3_output_init();
+    GPIOB_Init_PB12_13_14_Output();
     left_motor();
 
     while (1) 
     {
+        LED_R_ON();
+        LED_G_ON();
+        LED_B_ON();
         if(d < 700)
         {
             d++;
