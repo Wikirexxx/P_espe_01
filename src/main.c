@@ -134,6 +134,7 @@ int main(void)
         LED_R_ON();
         LED_G_ON();
         LED_B_ON();
+        /*
         if(d < 700)
         {
             d++;
