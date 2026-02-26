@@ -127,6 +127,7 @@ int main(void)
     usart3_pb10_pb11_init_115200();
     gpio_pa2_pa3_output_init();
     GPIOB_Init_PB12_13_14_Output();
+    crear_C(C);
     left_motor();
 
     while (1) 
