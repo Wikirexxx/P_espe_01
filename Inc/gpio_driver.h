@@ -27,6 +27,9 @@
 #define LED_G_OFF()   (GPIOB->BSRR = 0x20000000U)  // RST  PB13
 #define LED_B_ON()    (GPIOB->BSRR = 0x00004000U)  // SET  PB14
 #define LED_B_OFF()   (GPIOB->BSRR = 0x40000000U)  // RST  PB14
+#define blink_R()     (GPIOB->ODR ^= 0x00001000U)  // TOGGLE PB12
+#define blink_G()     (GPIOB->ODR ^= 0x00002000U)  // TOGGLE PB13
+#define blink_B()     (GPIOB->ODR ^= 0x00004000U)  // TOGGLE PB14
 
 void TFT_ctrl_gpio_init(void);
 void test_TFT_pins(void);

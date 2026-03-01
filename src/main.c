@@ -9,6 +9,7 @@
 #include "quad_enc.h"
 #include "mmcr.h"
 #include "uart_driver.h"
+#include "timer_driver.h"
 
 void FPU_Enable(void);
 void clear_fault_flags(void);
@@ -94,8 +95,10 @@ float tabla_seno[] = {
     283
 };
 uint32_t pos = 0;
+uint32_t dbg_pos = 0;
+uint32_t rpm = 0;
 uint8_t i = 0;
-uint16_t d = 400;
+uint16_t d = 500;
 uint8_t flag_cMotor = 0;
 typedef struct{
     uint8_t a;
@@ -129,12 +132,16 @@ int main(void)
     GPIOB_Init_PB12_13_14_Output();
     crear_C(C);
     left_motor();
+    timer4_init();
+
 
     while (1) 
     {
-        LED_R_ON();
-        LED_G_ON();
-        LED_B_ON();
+        left_motor();
+        pwm_tim1_set_duty_permille(d);
+        //LED_R_ON();
+        //LED_G_ON();
+        //LED_B_ON();
         /*
         if(d < 700)
         {
@@ -242,4 +249,20 @@ void clear_fault_flags(void)
     SCB->CFSR = 0xFFFFFFFF;   // limpia UFSR/BFSR/MMFSR
     SCB->HFSR = 0xFFFFFFFF;   // limpia hardfault status (w1c)
     SCB->DFSR = 0xFFFFFFFF;   // opcional
+}
+void TIM4_IRQHandler(void)
+{
+    if (TIM4->SR & TIM_SR_UIF) 
+    { 
+        TIM4->SR &= ~TIM_SR_UIF;   // clear UIF (escritura 0)
+        pos = encoder_get_count(); // (void)pos; // int32_t
+        (void)pos;
+        blink_R();
+        // 44 pulsos por vuelta directo en motor, muestra cada 10ms, relación engranes = 9.28:1, rpm max = 1360 
+        rpm = pos / 44.0f * 100.0f * 60.0f / 9.28f; // rpm = (pulsos / pulsos_por_vuelta) * 100 (para pasar a segundos) * 60 (para pasar a minutos) / relación de engranajes
+        (void)rpm;
+        dbg_pos = pos; // variable para debug en breakpoint, muestra el valor de pos cada 10ms
+        pos = 0;
+        encoder_reset();
+    }
 }
