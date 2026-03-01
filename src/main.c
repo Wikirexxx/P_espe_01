@@ -1,6 +1,8 @@
 #define STM32F405xx
 #include "stm32f4xx.h"
 #include <stdint.h>
+#include <stdlib.h>
+#include <math.h>
 #include "system_clock_driver.h"
 #include "spi_driver.h"
 #include "gpio_driver.h"
@@ -10,6 +12,13 @@
 #include "mmcr.h"
 #include "uart_driver.h"
 #include "timer_driver.h"
+
+#define CHECK_NAN_F(x) do {                         \
+    float _v = (x);                                 \
+    if (isnan(_v)) {                                \
+        while (1) {}                                \
+    }                                                \
+} while(0)
 
 void FPU_Enable(void);
 void clear_fault_flags(void);
@@ -252,6 +261,7 @@ void clear_fault_flags(void)
 }
 void TIM4_IRQHandler(void)
 {
+    ieee_754_float_t captura_float;
     if (TIM4->SR & TIM_SR_UIF) 
     { 
         TIM4->SR &= ~TIM_SR_UIF;   // clear UIF (escritura 0)
@@ -264,5 +274,27 @@ void TIM4_IRQHandler(void)
         dbg_pos = pos; // variable para debug en breakpoint, muestra el valor de pos cada 10ms
         pos = 0;
         encoder_reset();
+        //------------------------------------------------------------------------------------
+        //------------------Se ejecula la estimación del modelo ARX---------------------------
+        //------------------------------------------------------------------------------------
+        build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
+        
+        ut_k_2 = ut_k_1;
+        ut_k_1 = ut;
+        y_k_2 = y_k_1;
+        y_k_1 = rpm; // y_k_1 = salida de la planta (rpm medida)
+
+        multiplicar_matriz_vector(C, z, g);
+        zgpp = producto_punto(z, g, MAX_DIMX);
+        alfa2 = fhi * fhi + zgpp;
+        ye = producto_punto(Pe, z, MAX_DIMX);
+        e = rpm - ye;
+        for (i = 0; i < MAX_DIMX; i++) 
+        {
+            Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
+        }
+        actualizar_C(C, g, fhi, alfa2);
+        //------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------
     }
 }

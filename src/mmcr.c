@@ -11,7 +11,7 @@ float z[MAX_DIMX] = {0,0,0,0,0};
 float g[MAX_DIMX] = {0,0,0,0,0};
 float fhi = 0.98f;
 float ye = 0;
-float e = 0;
+float e = 100;
 float yr = 0;
 float ut = 0;
 float C[MAX_DIMX][MAX_DIMY];
@@ -59,12 +59,19 @@ void multiplicar_matriz_vector(float C[MAX_DIMX][MAX_DIMY], float z[MAX_DIMX], f
 }
 void actualizar_C(float C[MAX_DIMX][MAX_DIMY], const float g[MAX_DIMX], float fhi, float alfa2)
 {
+    // evita 1/0 y evita propagar NaN/Inf
+    if (!isfinite(fhi) || !isfinite(alfa2) || fhi == 0.0f || alfa2 == 0.0f) {
+        // aquí puedes poner breakpoint o manejar error
+        return;
+    }
+
     float inv_fhi2  = 1.0f / (fhi * fhi);
     float inv_alfa2 = 1.0f / alfa2;
 
     for (int i = 0; i < MAX_DIMX; i++) {
         for (int j = 0; j < MAX_DIMY; j++) {
-            C[i][j] = inv_fhi2 * ( C[i][j] - (inv_alfa2 * g[i] * g[j]) );
+            float t = C[i][j] - (inv_alfa2 * g[i] * g[j]);
+            C[i][j] = inv_fhi2 * t;
         }
     }
 }
