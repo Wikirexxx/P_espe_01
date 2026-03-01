@@ -12,10 +12,12 @@ float g[MAX_DIMX] = {0,0,0,0,0};
 float fhi = 0.98f;
 float ye = 0;
 float e = 100;
+float hist_error[20] = {0};
 float yr = 0;
 float ut = 0;
 float C[MAX_DIMX][MAX_DIMY];
 float alfa2 = 0;
+float inv_alfa2 = 0;
 float Pe[5]={0.1,0.1,0.1,0.1,0.1};
 float zgpp = 0;
 

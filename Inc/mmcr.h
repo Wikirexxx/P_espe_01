@@ -20,10 +20,12 @@ extern float g[MAX_DIMX];
 extern float fhi;
 extern float ye;
 extern float e;
+extern float hist_error[20];
 extern float yr;
 extern float ut;
 extern float C[MAX_DIMX][MAX_DIMY];
 extern float alfa2;
+extern float inv_alfa2;
 extern float Pe[5];
 extern float zgpp;
 

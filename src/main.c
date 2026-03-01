@@ -13,15 +13,15 @@
 #include "uart_driver.h"
 #include "timer_driver.h"
 
-#define CHECK_NAN_F(x) do {                         \
-    float _v = (x);                                 \
-    if (isnan(_v)) {                                \
-        while (1) {}                                \
-    }                                                \
-} while(0)
-
 void FPU_Enable(void);
 void clear_fault_flags(void);
+
+float hist_rpm[10] = {0};
+void shift_right(float *v, int size, float new_value);
+float promedio_float(const float *v, size_t n);
+uint8_t eval_error(float *e,uint8_t dim);
+
+
 
 uint16_t posx_act_data = 0;
 float rpmr_data = 0.0f;
@@ -105,10 +105,13 @@ float tabla_seno[] = {
 };
 uint32_t pos = 0;
 uint32_t dbg_pos = 0;
-uint32_t rpm = 0;
+float rpm = 0;
 uint8_t i = 0;
-uint16_t d = 500;
+uint16_t d = 973;
 uint8_t flag_cMotor = 0;
+uint32_t intentos = 0;
+uint32_t intentos2 = 0;
+uint8_t flag_error = 0;
 typedef struct{
     uint8_t a;
     uint8_t b;
@@ -140,7 +143,6 @@ int main(void)
     gpio_pa2_pa3_output_init();
     GPIOB_Init_PB12_13_14_Output();
     crear_C(C);
-    left_motor();
     timer4_init();
 
 
@@ -222,7 +224,7 @@ int main(void)
             }
             actualizar_C(C, g, fhi, alfa2);
             
-            Delay_ms(10);
+            Delay_ms(4);
             captura_float.f = yr; 
             usart3_write_byte(captura_float.bytes.d);
             usart3_write_byte(captura_float.bytes.c);
@@ -233,6 +235,7 @@ int main(void)
             usart3_write_byte(captura_float.bytes.c);
             usart3_write_byte(captura_float.bytes.b);
             usart3_write_byte(captura_float.bytes.a); 
+            //*********************************************************************
         }
     }
 }
@@ -259,6 +262,41 @@ void clear_fault_flags(void)
     SCB->HFSR = 0xFFFFFFFF;   // limpia hardfault status (w1c)
     SCB->DFSR = 0xFFFFFFFF;   // opcional
 }
+void shift_right(float *v, int size, float new_value)
+{
+    for (int i = size - 1; i > 0; i--)
+    {
+        v[i] = v[i - 1];
+    }
+
+    v[0] = new_value;
+}
+float promedio_float(const float *v, size_t n)
+{
+    if (n == 0) return 0.0f;   // evitar división por cero
+
+    float suma = 0.0f;
+
+    for (size_t i = 0; i < n; i++)
+    {
+        suma += v[i];
+    }
+
+    return suma / (float)n;
+}
+uint8_t eval_error(float *e,uint8_t dim)
+{
+    uint8_t count = 0;
+    uint8_t i = 0;
+    for (i = 0; i < dim; i++)
+    {
+        if (fabsf(e[i]) > 10.0f) // umbral de error, ajustar según sea necesario
+        {
+            count++;
+        }
+    }
+    return count;
+}
 void TIM4_IRQHandler(void)
 {
     ieee_754_float_t captura_float;
@@ -270,31 +308,69 @@ void TIM4_IRQHandler(void)
         blink_R();
         // 44 pulsos por vuelta directo en motor, muestra cada 10ms, relación engranes = 9.28:1, rpm max = 1360 
         rpm = pos / 44.0f * 100.0f * 60.0f / 9.28f; // rpm = (pulsos / pulsos_por_vuelta) * 100 (para pasar a segundos) * 60 (para pasar a minutos) / relación de engranajes
+        if(rpm == 0)
         (void)rpm;
         dbg_pos = pos; // variable para debug en breakpoint, muestra el valor de pos cada 10ms
         pos = 0;
         encoder_reset();
-        //------------------------------------------------------------------------------------
-        //------------------Se ejecula la estimación del modelo ARX---------------------------
-        //------------------------------------------------------------------------------------
-        build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
-        
-        ut_k_2 = ut_k_1;
-        ut_k_1 = ut;
-        y_k_2 = y_k_1;
-        y_k_1 = rpm; // y_k_1 = salida de la planta (rpm medida)
-
-        multiplicar_matriz_vector(C, z, g);
-        zgpp = producto_punto(z, g, MAX_DIMX);
-        alfa2 = fhi * fhi + zgpp;
-        ye = producto_punto(Pe, z, MAX_DIMX);
-        e = rpm - ye;
-        for (i = 0; i < MAX_DIMX; i++) 
+        shift_right(hist_rpm, 10, rpm);
+        if(intentos < 10)
         {
-            Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
+            intentos++;
         }
-        actualizar_C(C, g, fhi, alfa2);
-        //------------------------------------------------------------------------------------
-        //------------------------------------------------------------------------------------
+        else
+        {
+            rpm = promedio_float(hist_rpm, 10);
+             //------------------------------------------------------------------------------------
+            //------------------Se ejecula la estimación del modelo ARX---------------------------
+            //------------------------------------------------------------------------------------
+            ut = d;
+            build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
+            
+
+            ut_k_2 = ut_k_1;
+            ut_k_1 = ut;
+            y_k_2 = y_k_1;
+            y_k_1 = rpm; // y_k_1 = salida de la planta (rpm medida)
+
+            if (flag_error == 0)
+            {
+                multiplicar_matriz_vector(C, z, g);
+                zgpp = producto_punto(z, g, MAX_DIMX);
+                alfa2 = fhi * fhi + zgpp;
+            }
+            ye = producto_punto(Pe, z, MAX_DIMX);
+            e = rpm - ye;
+            shift_right(hist_error, 20, e);
+            if(eval_error(hist_error,20))
+            {
+                flag_error = 0;
+            }
+            else
+            {
+                flag_error = 1;
+            }
+            if (flag_error == 0)
+            {
+                inv_alfa2 = 1.0f / alfa2;
+                if (!isfinite(alfa2) || fabsf(alfa2) < 1e-12f) 
+                {
+                    while(1);
+                }
+                if (!isfinite(fhi) || fabsf(fhi) < 1e-12f) 
+                {
+                    while(1);
+                }
+                for (i = 0; i < MAX_DIMX; i++) 
+                {
+                    Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
+                }
+                actualizar_C(C, g, fhi, alfa2);
+            }
+            //------------------------------------------------------------------------------------
+            //------------------------------------------------------------------------------------
+        }
+        
+       
     }
 }
