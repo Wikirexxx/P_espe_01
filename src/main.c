@@ -106,12 +106,9 @@ float tabla_seno[] = {
 uint32_t pos = 0;
 uint32_t dbg_pos = 0;
 float rpm = 0;
-uint8_t i = 0;
 uint16_t d = 973;
 uint8_t flag_cMotor = 0;
 uint32_t intentos = 0;
-uint32_t intentos2 = 0;
-uint8_t flag_error = 0;
 typedef struct{
     uint8_t a;
     uint8_t b;
@@ -142,7 +139,9 @@ int main(void)
     usart3_pb10_pb11_init_115200();
     gpio_pa2_pa3_output_init();
     GPIOB_Init_PB12_13_14_Output();
-    crear_C(C);
+    crear_C(C,10.10f);
+    lambda = fhi * fhi; 
+    inv_lambda = 1.0f / lambda;
     timer4_init();
 
 
@@ -189,7 +188,7 @@ int main(void)
         }
         Delay_ms(50);
         */
-        
+        /*
         if (usart3_read_byte_nonblocking(&out))
         {
             for (j2 = 0; j2 < 4; j2++)
@@ -201,42 +200,8 @@ int main(void)
             captura_float.bytes.c = captura[1];
             captura_float.bytes.b = captura[2];
             captura_float.bytes.a = captura[3];   
-            
-            // Implementación de algoritmo de mínimos cuadrados recursivos
-
-            ut = captura_float.f;                               // ut = valor de entrada a la planta
-            build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
-            yr = producto_punto(P, z, MAX_DIMX);                // yr = salida de la planta estimada por el modelo
-            
-            ut_k_2 = ut_k_1;
-            ut_k_1 = ut;
-            y_k_2 = y_k_1;
-            y_k_1 = yr;
-            
-            multiplicar_matriz_vector(C, z, g);
-            zgpp = producto_punto(z, g, MAX_DIMX);
-            alfa2 = fhi * fhi + zgpp;
-            ye = producto_punto(Pe, z, MAX_DIMX);
-            e = yr - ye;
-            for (i = 0; i < MAX_DIMX; i++) 
-            {
-                Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
-            }
-            actualizar_C(C, g, fhi, alfa2);
-            
-            Delay_ms(4);
-            captura_float.f = yr; 
-            usart3_write_byte(captura_float.bytes.d);
-            usart3_write_byte(captura_float.bytes.c);
-            usart3_write_byte(captura_float.bytes.b);
-            usart3_write_byte(captura_float.bytes.a);
-            captura_float.f = ye;
-            usart3_write_byte(captura_float.bytes.d);
-            usart3_write_byte(captura_float.bytes.c);
-            usart3_write_byte(captura_float.bytes.b);
-            usart3_write_byte(captura_float.bytes.a); 
-            //*********************************************************************
         }
+        */
     }
 }
 void ini_pantalla(void)
@@ -299,6 +264,7 @@ uint8_t eval_error(float *e,uint8_t dim)
 }
 void TIM4_IRQHandler(void)
 {
+    uint8_t i = 0;
     ieee_754_float_t captura_float;
     if (TIM4->SR & TIM_SR_UIF) 
     { 
@@ -314,8 +280,9 @@ void TIM4_IRQHandler(void)
         pos = 0;
         encoder_reset();
         shift_right(hist_rpm, 10, rpm);
-        if(intentos < 10)
+        if(intentos < 20)
         {
+            hist_error[intentos] = 100.0f; // llenar el historial de error con un valor alto para evitar falsas activaciones del RLS al inicio
             intentos++;
         }
         else
@@ -324,53 +291,83 @@ void TIM4_IRQHandler(void)
              //------------------------------------------------------------------------------------
             //------------------Se ejecula la estimación del modelo ARX---------------------------
             //------------------------------------------------------------------------------------
-            ut = d;
+            ut = d /1000.0f; // entrada normalizada (0.0 a 1.0)
             build_z(z, ut, ut_k_1, ut_k_2, y_k_1, y_k_2);       // z = vector de regresores
             
-
             ut_k_2 = ut_k_1;
             ut_k_1 = ut;
             y_k_2 = y_k_1;
-            y_k_1 = rpm; // y_k_1 = salida de la planta (rpm medida)
+            y_k_1 = rpm/1000.0f; // y_k_1 = salida de la planta (rpm medida)
 
-            if (flag_error == 0)
-            {
-                multiplicar_matriz_vector(C, z, g);
-                zgpp = producto_punto(z, g, MAX_DIMX);
-                alfa2 = fhi * fhi + zgpp;
-            }
-            ye = producto_punto(Pe, z, MAX_DIMX);
-            e = rpm - ye;
+            ye = producto_punto(Pe, z, MAX_DIMX);           //===== Predicción con parámetros estimados ===== ye(k) = Pe.' * z;
+            e = rpm - ye;                                   //===== Error a priori ===== e = y(k) - ye(k);
             shift_right(hist_error, 20, e);
-            if(eval_error(hist_error,20))
+            if(intentos == 20)
             {
-                flag_error = 0;
-            }
-            else
-            {
-                flag_error = 1;
-            }
-            if (flag_error == 0)
-            {
-                inv_alfa2 = 1.0f / alfa2;
-                if (!isfinite(alfa2) || fabsf(alfa2) < 1e-12f) 
+                error_promedio = promedio_float(hist_error, 20);
+                if (fabsf(error_promedio) > 5.0f && flag_cMotor == 0) // umbral de error promedio, ajustar según sea necesario
                 {
-                    while(1);
+                    multiplicar_matriz_vector(C, z, g);             // ======= RLS estable ======= g = C*z
+
+                    zgpp = producto_punto(z, g, MAX_DIMX);          // ======= alpha^2 = lambda + z'*g =======
+                    alfa2 = fhi * fhi + zgpp;
+                                                                    
+                    for (int i = 0; i < MAX_DIMX; i++)              // ======= Ganancia K = g / alfa2; =======
+                    {
+                        k_gain[i] = g[i] / alfa2;
+                    }
+                                
+                    for (i = 0; i < MAX_DIMX; i++)                  // ======= Actualización de parámetros ======= Pe = Pe + K*e; =======
+                    {
+                        Pe[i] = Pe[i] + (k_gain[i] * e);
+                    }
+                                                                    // ======= Actualización covarianza (Joseph stabilized form) I = eye(size(C)); =======
+                                                                    // ======= C = (1/lambda) * (I - K*z.') * C * (I - K*z.').' ; =======
+                    crear_C(I,1.0f);                                        // identidad
+                    producto_exterior(k_gain,z,kg_Z);                       // kg_Z = K*z.'
+                    restar_matrices(I, kg_Z, I_minus_KZ);                   // I - K*z.'
+                    escalar_matriz_out(I_minus_KZ, inv_lambda, A_scaled);   // A_scaled = (1/lambda) * (I - K*z.')
+                    multiplicar_matrices(A_scaled, C, R);                   // R = A_scaled * C
+                    // (1) Transpuesta
+                    transponer_matriz(I_minus_KZ, I_minus_KZ_T);
+                    // (2) C_new = R * (I-Kz^T)^T
+                    multiplicar_matrices(R, I_minus_KZ_T, C_new);
+                    // (3) C = C_new
+                    copiar_matriz(C_new, C);
+                    simetrizar(C);
+                    clamp_covariance(C, 1e-3f, 1e3f);
                 }
-                if (!isfinite(fhi) || fabsf(fhi) < 1e-12f) 
+                if (fabs(error_promedio) < 5.0f)
                 {
-                    while(1);
+                    if(flag_cMotor == 0)
+                    {
+                        crear_C(C,10.10f);
+                        alfa2 = 0.0f;
+                        for(i = 0; i < MAX_DIMX; i++)
+                        {
+                            k_gain[i] = 0.0f;
+                            g[i] = 0.0f;
+                        }
+                    }
+                    flag_cMotor = 1;
                 }
-                for (i = 0; i < MAX_DIMX; i++) 
+                else
                 {
-                    Pe[i] = Pe[i] + (1.0f / alfa2) * g[i] * e;
+                    if (flag_cMotor == 1)
+                    {
+                        //for(i = 0; i < MAX_DIMX; i++)
+                        //{
+                        //    Pe[i] = 0.1f; // reiniciar parámetros a valores iniciales
+                        //}
+                    }
+                    
+                    flag_cMotor = 0;
                 }
-                actualizar_C(C, g, fhi, alfa2);
+                
+                
             }
             //------------------------------------------------------------------------------------
             //------------------------------------------------------------------------------------
         }
-        
-       
     }
 }
