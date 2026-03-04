@@ -74,18 +74,18 @@ typedef struct
     .error_promedio = 0.0f, \
     .yr = 0.0f, \
     .ut = 0.0f, \
-    .C = {0}, \
-    .I = {0}, \
+    .C = {{0}}, \
+    .I = {{0}}, \
     .alfa2 = 0.0f, \
     .inv_lambda = 0.0f, \
     .Pe = {0.1f,0.1f,0.1f,0.1f,0.1f}, \
     .zgpp = 0.0f, \
-    .kg_Z = {0}, \
-    .I_minus_KZ = {0}, \
-    .A_scaled = {0}, \
-    .R = {0}, \
-    .I_minus_KZ_T = {0}, \
-    .C_new = {0} \
+    .kg_Z = {{0}}, \
+    .I_minus_KZ = {{0}}, \
+    .A_scaled = {{0}}, \
+    .R = {{0}}, \
+    .I_minus_KZ_T = {{0}}, \
+    .C_new = {{0}} \
 }
 extern volatile variables_RLS_t g_RLS;
 

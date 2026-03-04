@@ -14,7 +14,8 @@ CMSIS_PATH := $(shell cygpath -u "C:\Users\franc\Documents\WS_VSCode\STM32F405ws
 # Opciones de compilación
 CFLAGS = -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb \
          -std=gnu11 -IInc -I$(CMSIS_PATH) -I$(DEVICE_PATH) \
-         -g3 -Og -ffunction-sections -fdata-sections
+         -g3 -Og -ffunction-sections -fdata-sections \
+		 -Wall -Wextra -Wunused -Wunused-variable -Wunused-but-set-variable
 
 LDFLAGS = -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb \
           -T startup/STM32F405RGTX_FLASH.ld \

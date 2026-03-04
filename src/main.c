@@ -21,15 +21,14 @@ volatile variables_RLS_t g_RLS = V_MMCr_DEFAULTS;
 float dbg_rpmr = 0.0f;
 float dbg_rpme = 0.0f;
 
+uint8_t flag_multtimer = 0;
+uint8_t cont_multtimer = 0;
 
 void FPU_Enable(void);
 void clear_fault_flags(void);
 void shift_right(volatile float *v, int size, float new_value);
 float promedio_float(volatile float *v, size_t n);
 uint8_t eval_error(float *e,uint8_t dim);
-
-
-
 
 
 
@@ -140,11 +139,8 @@ typedef union {
 
 int main(void)
 {
-    ieee_754_float_t captura_float;
-    uint8_t i = 0;
     clear_fault_flags();
     FPU_Enable();
-    volatile uint32_t cpacr = SCB->CPACR;
     SystemClock_Config();
     ini_pantalla();
     encoder_tim2_init();
@@ -165,23 +161,29 @@ int main(void)
         //LED_R_ON();
         //LED_G_ON();
         //LED_B_ON();
-/*
-        pos = encoder_get_count(); // (void)pos; // int32_t
-        (void)pos;
-        ili_draw_graph(tabla_seno[i], tabla_seno[i] + 5, time_data);
-        i = i + 1;
-       
-        time_data = time_data + 1;
-        if(time_data > 500)
+        if (flag_multtimer == 1)
         {
-            time_data = 0;
+            flag_multtimer = 0;
+            if(g_RLS.ye > 620 )
+            {
+                g_RLS.ye = 620;
+            }
+            if (g_RLS.ye < 0)
+            {
+                g_RLS.ye = 0;
+            }
+            if (g_motor.rpm > 620)
+            {
+                g_motor.rpm = 620;
+            }
+            if (g_motor.rpm < 0)
+            {
+                g_motor.rpm = 0;
+            }
+            
+            ili_draw_graph(g_RLS.ye, g_motor.rpm, 100);
         }
-        if (i >= 72)
-        {
-            i = 0;
-        }
-        Delay_ms(50);
-        */
+        
 
     }
 }
@@ -347,6 +349,12 @@ void TIM4_IRQHandler(void)
             }
             //------------------------------------------------------------------------------------
             //------------------------------------------------------------------------------------
+        }
+        cont_multtimer = cont_multtimer + 1;
+        if(cont_multtimer >= 10) // cada 100ms
+        {
+            flag_multtimer = 1;
+            cont_multtimer = 0;
         }
     }
     LED_R_OFF();

@@ -343,10 +343,10 @@ void ili_float_2_intstring(float val, char* buf)
 void ili_plantilla_grafica(void)
 {
     uint8_t it = 0;
-    uint8_t max_renglon = 0;
+    //uint8_t max_renglon = 0;
     char buf_valor_eje_y[4];
     float valor_eje_y_f = 0.0f;
-    uint16_t ini_texto_eje_x = 0;
+    //uint16_t ini_texto_eje_x = 0;
     //--------------------------------------------------- Grafica
     ili_fill_rect(inicio_x_grafica, inicio_y_grafica , ancho_grafica, altura_grafica, COLOR_BLANCO); // rojo relleno
     ili_fill_rect(ini_renglon_grafica, inicio_y_grafica-3, ancho_grafica, 3, COLOR_BLANCO);        
@@ -365,7 +365,7 @@ void ili_plantilla_grafica(void)
     }
     draw_string(0, (inicio_y_grafica-offset_alinea_y) + paso_renglon_grafica * it, "0000", COLOR_BLANCO, COLOR_NEGRO); // blanco sobre negro
     //--------------------------------------------------- Valores eje x
-    ini_texto_eje_x = (uint16_t)(altura_grafica + inicio_y_grafica + offset_alinea_y);
+    //ini_texto_eje_x = (uint16_t)(altura_grafica + inicio_y_grafica + offset_alinea_y);
     draw_string((uint16_t)(ancho_grafica / 2 + inicio_x_grafica -10), pos_y_texto_grafica, "TIME", COLOR_ROJO, COLOR_NEGRO); // blanco sobre negro
     ili_fill_rect(inicio_x_grafica, pos_y_texto_grafica+2, ancho_grafica/2 -15, 1, COLOR_ROJO);
     ili_fill_rect(inicio_x_grafica + (ancho_grafica/2 + 17), pos_y_texto_grafica+2, ancho_grafica/2 -17, 1, COLOR_ROJO);
@@ -381,8 +381,6 @@ void ili_brightness(uint32_t brightness)
 }
 void ili_fill_graphs(void)
 {
-    char val_step[5];        
-    val_step[4] = '\0';
     uint8_t i = 0;
     for(i = 0; i < divs_col_grafica; i++)
     {
