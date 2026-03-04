@@ -1,37 +1,8 @@
 #include "mmcr.h"
 
 // Variables globales solo para probar algoritmo minimos cuadrados recursivos
-float P[5]={0,0.5,1,-0.6,0};
 
-float k_gain[MAX_DIMX] = {0,0,0,0,0};
-float ut_k_1 = 0;
-float ut_k_2 = 0;
-float y_k_1 = 0;
-float y_k_2 = 0;
-float z[MAX_DIMX] = {0,0,0,0,0};
-float g[MAX_DIMX] = {0,0,0,0,0};
-float fhi = 0.989f;
-float lambda = 0.0f;
-float ye = 0;
-float e = 100;
-float hist_error[20] = {0};
-float error_promedio = 0;
-float yr = 0;
-float ut = 0;
-float C[MAX_DIMX][MAX_DIMY];
-float I[MAX_DIMX][MAX_DIMY];
-float alfa2 = 0;
-float inv_lambda = 0;
-float Pe[5]={0.1,0.1,0.1,0.1,0.1};
-float zgpp = 0;
-float kg_Z[MAX_DIMX][MAX_DIMY];
-float I_minus_KZ[MAX_DIMX][MAX_DIMX];
-float A_scaled[MAX_DIMX][MAX_DIMX];    
-float R[MAX_DIMX][MAX_DIMX];
-float I_minus_KZ_T[MAX_DIMX][MAX_DIMX];
-float C_new[MAX_DIMX][MAX_DIMX];
-
-float producto_punto(float *a, float *b, int n) 
+float producto_punto(volatile float *a, volatile float *b, int n)
 {
     uint8_t i = 0;
     float resultado = 0.0f;
@@ -41,7 +12,7 @@ float producto_punto(float *a, float *b, int n)
     }
     return resultado;
 }
-void build_z(float *z, float ut, float ut_k_1, float ut_k_2, float y_k_1, float y_k_2)
+void build_z(volatile float *z, volatile float ut, volatile float ut_k_1, volatile float ut_k_2, volatile float y_k_1, volatile float y_k_2)
 {
     // z= [u(k);y(k-1);u(k-1);y(k-2);u(k-2)]
     z[0] = ut;
@@ -50,7 +21,7 @@ void build_z(float *z, float ut, float ut_k_1, float ut_k_2, float y_k_1, float 
     z[3] = y_k_2;
     z[4] = ut_k_2;
 }
-void crear_C(float C[MAX_DIMX][MAX_DIMY], float valor_inicial)
+void crear_C(volatile float C[MAX_DIMX][MAX_DIMY], float valor_inicial)
 {
     for (int i = 0; i < MAX_DIMX; i++) {
         for (int j = 0; j < MAX_DIMY; j++) {
@@ -59,7 +30,7 @@ void crear_C(float C[MAX_DIMX][MAX_DIMY], float valor_inicial)
         C[i][i] = valor_inicial;
     }
 }
-void multiplicar_matriz_vector(float C[MAX_DIMX][MAX_DIMY], float z[MAX_DIMX], float g[MAX_DIMX])
+void multiplicar_matriz_vector(volatile float C[MAX_DIMX][MAX_DIMY], volatile float z[MAX_DIMX], volatile float g[MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++) {
         g[i] = 0.0f;
@@ -69,7 +40,7 @@ void multiplicar_matriz_vector(float C[MAX_DIMX][MAX_DIMY], float z[MAX_DIMX], f
         }
     }
 }
-void producto_exterior(const float K[MAX_DIMX],const float z[MAX_DIMX],float M[MAX_DIMX][MAX_DIMX])
+void producto_exterior(volatile float K[MAX_DIMX], volatile float z[MAX_DIMX], volatile float M[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -79,7 +50,7 @@ void producto_exterior(const float K[MAX_DIMX],const float z[MAX_DIMX],float M[M
         }
     }
 }
-void restar_matrices(float A[MAX_DIMX][MAX_DIMX], float B[MAX_DIMX][MAX_DIMX], float R[MAX_DIMX][MAX_DIMX])
+void restar_matrices(volatile float A[MAX_DIMX][MAX_DIMX], volatile float B[MAX_DIMX][MAX_DIMX], volatile float R[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -89,7 +60,7 @@ void restar_matrices(float A[MAX_DIMX][MAX_DIMX], float B[MAX_DIMX][MAX_DIMX], f
         }
     }
 }
-void escalar_matriz_out(const float A[MAX_DIMX][MAX_DIMX], float escalar, float B[MAX_DIMX][MAX_DIMX])
+void escalar_matriz_out(volatile float A[MAX_DIMX][MAX_DIMX], volatile float escalar, volatile float B[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -99,7 +70,7 @@ void escalar_matriz_out(const float A[MAX_DIMX][MAX_DIMX], float escalar, float 
         }
     }
 }
-void multiplicar_matrices(const float A[MAX_DIMX][MAX_DIMX],const float B[MAX_DIMX][MAX_DIMX],float R[MAX_DIMX][MAX_DIMX])
+void multiplicar_matrices(volatile float A[MAX_DIMX][MAX_DIMX],volatile float B[MAX_DIMX][MAX_DIMX], volatile float R[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -114,7 +85,7 @@ void multiplicar_matrices(const float A[MAX_DIMX][MAX_DIMX],const float B[MAX_DI
         }
     }
 }
-void transponer_matriz(const float A[MAX_DIMX][MAX_DIMX],float AT[MAX_DIMX][MAX_DIMX])
+void transponer_matriz(volatile float A[MAX_DIMX][MAX_DIMX],volatile float AT[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -124,7 +95,7 @@ void transponer_matriz(const float A[MAX_DIMX][MAX_DIMX],float AT[MAX_DIMX][MAX_
         }
     }
 }
-void copiar_matriz(const float A[MAX_DIMX][MAX_DIMX],float B[MAX_DIMX][MAX_DIMX])
+void copiar_matriz(volatile float A[MAX_DIMX][MAX_DIMX], volatile float B[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -134,7 +105,7 @@ void copiar_matriz(const float A[MAX_DIMX][MAX_DIMX],float B[MAX_DIMX][MAX_DIMX]
         }
     }
 }
-void simetrizar(float C[MAX_DIMX][MAX_DIMX])
+void simetrizar(volatile float C[MAX_DIMX][MAX_DIMX])
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
@@ -146,7 +117,7 @@ void simetrizar(float C[MAX_DIMX][MAX_DIMX])
         }
     }
 }
-void clamp_covariance(float C[MAX_DIMX][MAX_DIMX], float floor, float ceiling)
+void clamp_covariance(volatile float C[MAX_DIMX][MAX_DIMX], float floor, float ceiling)
 {
     for (int i = 0; i < MAX_DIMX; i++)
     {
