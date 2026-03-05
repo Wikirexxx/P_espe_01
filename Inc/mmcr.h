@@ -101,5 +101,8 @@ void transponer_matriz(volatile float A[MAX_DIMX][MAX_DIMX],volatile float AT[MA
 void copiar_matriz(volatile float A[MAX_DIMX][MAX_DIMX], volatile float B[MAX_DIMX][MAX_DIMX]);
 void simetrizar(volatile float C[MAX_DIMX][MAX_DIMX]);
 void clamp_covariance(volatile float C[MAX_DIMX][MAX_DIMX], float floor, float ceiling);
+void shift_right(volatile float *v, int size, float new_value);
+float promedio_float(volatile float *v, size_t n);
+uint8_t eval_error(float *e,uint8_t dim);
 
 #endif

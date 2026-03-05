@@ -131,3 +131,38 @@ void clamp_covariance(volatile float C[MAX_DIMX][MAX_DIMX], float floor, float c
         }
     }
 }
+void shift_right(volatile float *v, int size, float new_value)
+{
+    for (int i = size - 1; i > 0; i--)
+    {
+        v[i] = v[i - 1];
+    }
+
+    v[0] = new_value;
+}
+float promedio_float(volatile float *v, size_t n)
+{
+    if (n == 0) return 0.0f;   // evitar división por cero
+
+    float suma = 0.0f;
+
+    for (size_t i = 0; i < n; i++)
+    {
+        suma += v[i];
+    }
+
+    return suma / (float)n;
+}
+uint8_t eval_error(float *e,uint8_t dim)
+{
+    uint8_t count = 0;
+    uint8_t i = 0;
+    for (i = 0; i < dim; i++)
+    {
+        if (fabsf(e[i]) > 10.0f) // umbral de error, ajustar según sea necesario
+        {
+            count++;
+        }
+    }
+    return count;
+}

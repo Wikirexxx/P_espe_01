@@ -26,9 +26,7 @@ uint8_t cont_multtimer = 0;
 
 void FPU_Enable(void);
 void clear_fault_flags(void);
-void shift_right(volatile float *v, int size, float new_value);
-float promedio_float(volatile float *v, size_t n);
-uint8_t eval_error(float *e,uint8_t dim);
+
 
 
 
@@ -36,82 +34,9 @@ uint16_t posx_act_data = 0;
 float rpmr_data = 0.0f;
 float rpme_data = 0.0f;
 float time_data = 0.0f;
+
 void ini_pantalla(void);
 
-float tabla_seno[] = {
-    300,
-    317,
-    335,
-    352,
-    368,
-    385,
-    400,
-    415,
-    429,
-    441,
-    453,
-    464,
-    473,
-    481,
-    488,
-    493,
-    497,
-    499,
-    500,
-    499,
-    497,
-    493,
-    488,
-    481,
-    473,
-    464,
-    453,
-    441,
-    429,
-    415,
-    400,
-    385,
-    368,
-    352,
-    335,
-    317,
-    300,
-    283,
-    265,
-    248,
-    232,
-    215,
-    200,
-    185,
-    171,
-    159,
-    147,
-    136,
-    127,
-    119,
-    112,
-    107,
-    103,
-    101,
-    100,
-    101,
-    103,
-    107,
-    112,
-    119,
-    127,
-    136,
-    147,
-    159,
-    171,
-    185,
-    200,
-    215,
-    232,
-    248,
-    265,
-    283
-};
 // Variables del RLS
 
 
@@ -209,41 +134,6 @@ void clear_fault_flags(void)
     SCB->CFSR = 0xFFFFFFFF;   // limpia UFSR/BFSR/MMFSR
     SCB->HFSR = 0xFFFFFFFF;   // limpia hardfault status (w1c)
     SCB->DFSR = 0xFFFFFFFF;   // opcional
-}
-void shift_right(volatile float *v, int size, float new_value)
-{
-    for (int i = size - 1; i > 0; i--)
-    {
-        v[i] = v[i - 1];
-    }
-
-    v[0] = new_value;
-}
-float promedio_float(volatile float *v, size_t n)
-{
-    if (n == 0) return 0.0f;   // evitar división por cero
-
-    float suma = 0.0f;
-
-    for (size_t i = 0; i < n; i++)
-    {
-        suma += v[i];
-    }
-
-    return suma / (float)n;
-}
-uint8_t eval_error(float *e,uint8_t dim)
-{
-    uint8_t count = 0;
-    uint8_t i = 0;
-    for (i = 0; i < dim; i++)
-    {
-        if (fabsf(e[i]) > 10.0f) // umbral de error, ajustar según sea necesario
-        {
-            count++;
-        }
-    }
-    return count;
 }
 void TIM4_IRQHandler(void)
 {
