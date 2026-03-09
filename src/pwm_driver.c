@@ -1,7 +1,5 @@
 #define STM32F405xx
 #include "stm32f4xx.h"
-#include "gpio_driver.h"
-#include "system_clock_driver.h"
 #include "pwm_driver.h"
 
 static uint32_t get_pclk2_hz(void);

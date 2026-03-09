@@ -2,6 +2,9 @@
 #define GPIO_DRIVER_H
 #include <stdint.h>
 
+#define STM32F405xx
+#include "stm32f4xx.h"
+
 // --- CS (Chip Select) ---
 #define TFT_CS_LOW()    (GPIOB->BSRR = 0x00400000U)  // PB6 = 0
 #define TFT_CS_HIGH()   (GPIOB->BSRR = 0x00000040U)  // PB6 = 1
@@ -13,7 +16,7 @@
 // --- RST (Reset) ---
 #define TFT_RST_LOW()   (GPIOB->BSRR = 0x01000000U)  // PB8 = 0
 #define TFT_RST_HIGH()  (GPIOB->BSRR = 0x00000100U)  // PB8 = 1
-#define TFT_RST_TOGGLE() (GPIOB->ODR ^= 0x00000100U) // PB8 toggle
+
 //Apaga PA2 y enciende PA3 para izquierda
 #define left_motor()  (GPIOA->BSRR = 0x00080004U)
 
@@ -32,7 +35,6 @@
 #define blink_B()     (GPIOB->ODR ^= 0x00004000U)  // TOGGLE PB14
 
 void TFT_ctrl_gpio_init(void);
-void test_TFT_pins(void);
 void GPIOB_Init_PB12_13_14_Output(void);
 void gpio_pa2_pa3_output_init(void);
 

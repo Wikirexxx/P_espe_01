@@ -1,17 +1,24 @@
+// =========================== Archivo cabecera ===========================
 #define STM32F405xx
 #include "stm32f4xx.h"
+// ============================ INCLUDES C ============================
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-#include "system_clock_driver.h"
-#include "spi_driver.h"
-#include "gpio_driver.h"
-#include "pwm_driver.h"
-#include "ILI9341_driver.h"
-#include "quad_enc.h"
-#include "mmcr.h"
-#include "uart_driver.h"
+
+// ============================ INCLUDES PROPIOS ============================
+#include "gpio_if.h"
+#include "spi_if.h"
+#include "system_clock_if.h"
+#include "pwm_if.h"
+#include "quad_enc_if.h"
+#include "uart_if.h"
+
 #include "timer_driver.h"
+
+
+#include "ILI9341_driver.h"
+#include "mmcr.h"
 
 /* Definición + inicialización de variables para el motor*/
 volatile v_motor_t g_motor = V_MOTOR_DEFAULTS;
@@ -23,56 +30,27 @@ float dbg_rpme = 0.0f;
 
 uint8_t flag_multtimer = 0;
 uint8_t cont_multtimer = 0;
+uint8_t flag_cMotor = 0;
+uint32_t intentos = 0;
 
 void FPU_Enable(void);
 void clear_fault_flags(void);
-
-
-
-
-uint16_t posx_act_data = 0;
-float rpmr_data = 0.0f;
-float rpme_data = 0.0f;
-float time_data = 0.0f;
-
 void ini_pantalla(void);
-
-// Variables del RLS
-
-
-
-
-
-uint8_t flag_cMotor = 0;
-uint32_t intentos = 0;
-typedef struct{
-    uint8_t a;
-    uint8_t b;
-    uint8_t c;
-    uint8_t d;
-} ieee_754_bytes_t;
-
-typedef union {
-    float f;
-    ieee_754_bytes_t bytes;
-} ieee_754_float_t;
-
-    uint8_t out;
-    uint8_t captura[4];
-    uint8_t cont = 0;
-    uint8_t j2 = 0;
 
 int main(void)
 {
+    // Locales de arranque
     clear_fault_flags();
     FPU_Enable();
-    SystemClock_Config();
+
+    SYSCLK_STM32.init();
     ini_pantalla();
-    encoder_tim2_init();
-    pwm_tim1_pa8_init(PWM_TARGET_HZ);   // 20 kHz en PA8
-    usart3_pb10_pb11_init_115200();
-    gpio_pa2_pa3_output_init();
-    GPIOB_Init_PB12_13_14_Output();
+    quad_STM32.init();
+    PWM_STM32.motor.init(PWM_TARGET_HZ);
+    usart_STM32.init_115200();
+    GPIO_STM32.motor.init();
+    GPIO_STM32.rgb.init();
+
     crear_C(g_RLS.C,10.10f);
     g_RLS.lambda = g_RLS.fhi * g_RLS.fhi; 
     g_RLS.inv_lambda = 1.0f / g_RLS.lambda;
@@ -81,25 +59,22 @@ int main(void)
 
     while (1) 
     {
-        left_motor();
-        pwm_tim1_set_duty_permille(g_motor.d);
-        //LED_R_ON();
-        //LED_G_ON();
-        //LED_B_ON();
+        GPIO_STM32.motor.left();
+        PWM_STM32.motor.set_duty_permille(g_motor.d);
         if (flag_multtimer == 1)
         {
             flag_multtimer = 0;
-            if(g_RLS.ye > 620 )
+            if(g_RLS.ye > max_valor_eje_y )
             {
-                g_RLS.ye = 620;
+                g_RLS.ye = max_valor_eje_y;
             }
             if (g_RLS.ye < 0)
             {
                 g_RLS.ye = 0;
             }
-            if (g_motor.rpm > 620)
+            if (g_motor.rpm > max_valor_eje_y)
             {
-                g_motor.rpm = 620;
+                g_motor.rpm = max_valor_eje_y;
             }
             if (g_motor.rpm < 0)
             {
@@ -114,10 +89,11 @@ int main(void)
 }
 void ini_pantalla(void)
 {
-    TFT_ctrl_gpio_init();
-    pwm_pb0_tim3_init(10000, 450); // PWM Usado para brillo TFT
-    SPI1_gpio_init();
-    SPI1_init();
+    GPIO_STM32.tft.init();
+    PWM_STM32.tft_bl.init(10000, 450); // PWM Usado para brillo TFT
+    SPI1_STM32.gpio_init();
+    SPI1_STM32.init();
+    GPIO_STM32.tft.cs_high();
     reset_TFT();
     ILI9341_init();
     ili_plantilla_grafica();
@@ -137,16 +113,16 @@ void clear_fault_flags(void)
 }
 void TIM4_IRQHandler(void)
 {
-    LED_R_ON();
+    GPIO_STM32.rgb.r_toggle();//GPIO_STM32.rgb.r_on();
     uint8_t i = 0;
     if (TIM4->SR & TIM_SR_UIF) 
     { 
         TIM4->SR &= ~TIM_SR_UIF;   // clear UIF (escritura 0)
-        g_motor.pos = encoder_get_count(); // (void)pos; 
-        // 44 pulsos por vuelta directo en motor, muestra cada 10ms, relación engranes = 9.28:1, rpm max = 1360 
-        g_motor.rpm = g_motor.pos / 44.0f * 100.0f * 60.0f / 9.28f; // rpm = (pulsos / pulsos_por_vuelta) * 100 (para pasar a segundos) * 60 (para pasar a minutos) / relación de engranajes
+        g_motor.pos = quad_STM32.get_count();
+        // 44 pulsos por vuelta directo en motor, muestra cada 10ms, relación engranes = 4.4:1, rpm max = 1360 
+        g_motor.rpm = g_motor.pos / 44.0f * 100.0f * 60.0f / 4.4f; // rpm = (pulsos / pulsos_por_vuelta) * 100 (para pasar a segundos) * 60 (para pasar a minutos) / relación de engranajes
         g_motor.pos = 0;
-        encoder_reset();
+        quad_STM32.reset();
         shift_right(g_motor.hist_rpm, 10, g_motor.rpm);
         if(intentos < 20)
         {
@@ -247,5 +223,5 @@ void TIM4_IRQHandler(void)
             cont_multtimer = 0;
         }
     }
-    LED_R_OFF();
+    //GPIO_STM32.rgb.r_off();
 }

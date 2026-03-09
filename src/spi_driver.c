@@ -69,7 +69,6 @@ void SPI1_init(void)
     SPI1->CR1 |=  0x0300U;
     // Enable SPI1 
     SPI1->CR1 |=  0x0040U;
-    TFT_CS_HIGH();
 }
 void SPI1_send_byte(uint8_t data)
 {

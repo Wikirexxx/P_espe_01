@@ -2,6 +2,8 @@
 #define ILI9341_DRIVER_H
 #include <stdint.h>
 
+#define max_valor_eje_y 1140
+
 // Básicos
 #define COLOR_NEGRO      0x0000
 #define COLOR_BLANCO     0xFFFF
@@ -29,7 +31,7 @@
 #define COLOR_VERDE_OSC  0x03E0
 #define COLOR_ROJO_OSC   0x7800
 
-void SPI1_send_CMD(uint8_t cmd);
+void ili_send_CMD(uint8_t cmd);
 void ILI9341_init(void);
 void __attribute__((optimize("O0"))) delay_cycles(uint32_t cyc);
 void ili_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);

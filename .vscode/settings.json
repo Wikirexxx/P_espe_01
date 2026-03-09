@@ -1,6 +1,5 @@
 {
-    "files.associations": {
-        "boton.h": "c",
-        "systick_config.h": "c"
-    }
+  "github.copilot.enable": {
+    "*": false
+  }
 }

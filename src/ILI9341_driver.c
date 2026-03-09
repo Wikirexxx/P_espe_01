@@ -1,11 +1,13 @@
 #define STM32F405xx
 #include "stm32f4xx.h"
-#include "spi_driver.h"
-#include "gpio_driver.h"
+#include "gpio_if.h"
+#include "spi_if.h"
+#include "system_clock_if.h"
+#include "pwm_if.h"
+
 #include "ILI9341_driver.h"
-#include "system_clock_driver.h"
 #include "Chars.h"
-#include "pwm_driver.h"
+
 
 // Maximos caracteres por rengló 40, cuenta con 32 renglones
 
@@ -21,7 +23,7 @@
 #define ini_renglon_grafica 30
 #define primera_linea_grafica 120
 #define paso_renglon_grafica 20
-#define max_valor_eje_y 620
+
 #define division_eje_y 10
 #define offset_alinea_y 7
 #define divs_col_grafica 105
@@ -46,129 +48,129 @@ static uint16_t vec_datar[divs_col_grafica];
 static uint16_t vec_datae[divs_col_grafica];
 static uint16_t posx_act_data = 0;
 
-void SPI1_send_CMD(uint8_t cmd)
+void ili_send_CMD(uint8_t cmd)
 {
-    TFT_DC_COMMAND();
-    SPI1_send_byte(cmd);
+    GPIO_STM32.tft.dc_command();
+    SPI1_STM32.send_byte(cmd);
 }
-void SPI1_send_data(uint8_t data)
+void ili_send_data(uint8_t data)
 {
-    TFT_DC_DATA();
-    SPI1_send_byte(data);
+    GPIO_STM32.tft.dc_data();
+    SPI1_STM32.send_byte(data);
 }
 void ILI9341_init(void)
 {
-    TFT_CS_LOW();
+    GPIO_STM32.tft.cs_low();
     // (Display off)
-    SPI1_send_CMD(0x28);
+    ili_send_CMD(0x28);
 
     // Issue a series of initialization commands from the
     // Adafruit library for a simple 'known good' test.
-    SPI1_send_CMD(0xEF);
-    SPI1_send_data(0x03);
-    SPI1_send_data(0x80);
-    SPI1_send_data(0x02);
-    SPI1_send_CMD(0xCF);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0xC1);
-    SPI1_send_data(0x30);
-    SPI1_send_CMD(0xED);
-    SPI1_send_data(0x64);
-    SPI1_send_data(0x03);
-    SPI1_send_data(0x12);
-    SPI1_send_data(0x81);
-    SPI1_send_CMD(0xE8);
-    SPI1_send_data(0x85);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0x78);
-    SPI1_send_CMD(0xCB);
-    SPI1_send_data(0x39);
-    SPI1_send_data(0x2C);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0x34);
-    SPI1_send_data(0x02);
-    SPI1_send_CMD(0xF7);
-    SPI1_send_data(0x20);
-    SPI1_send_CMD(0xEA);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0x00);
+    ili_send_CMD(0xEF);
+    ili_send_data(0x03);
+    ili_send_data(0x80);
+    ili_send_data(0x02);
+    ili_send_CMD(0xCF);
+    ili_send_data(0x00);
+    ili_send_data(0xC1);
+    ili_send_data(0x30);
+    ili_send_CMD(0xED);
+    ili_send_data(0x64);
+    ili_send_data(0x03);
+    ili_send_data(0x12);
+    ili_send_data(0x81);
+    ili_send_CMD(0xE8);
+    ili_send_data(0x85);
+    ili_send_data(0x00);
+    ili_send_data(0x78);
+    ili_send_CMD(0xCB);
+    ili_send_data(0x39);
+    ili_send_data(0x2C);
+    ili_send_data(0x00);
+    ili_send_data(0x34);
+    ili_send_data(0x02);
+    ili_send_CMD(0xF7);
+    ili_send_data(0x20);
+    ili_send_CMD(0xEA);
+    ili_send_data(0x00);
+    ili_send_data(0x00);
     // PWCTR1
-    SPI1_send_CMD(0xC0);
-    SPI1_send_data(0x23);
+    ili_send_CMD(0xC0);
+    ili_send_data(0x23);
     // PWCTR2
-    SPI1_send_CMD(0xC1);
-    SPI1_send_data(0x10);
+    ili_send_CMD(0xC1);
+    ili_send_data(0x10);
     // VMCTR1
-    SPI1_send_CMD(0xC5);
-    SPI1_send_data(0x3E);
-    SPI1_send_data(0x28);
+    ili_send_CMD(0xC5);
+    ili_send_data(0x3E);
+    ili_send_data(0x28);
     // VMCTR2
-    SPI1_send_CMD(0xC7);
-    SPI1_send_data(0x86);
+    ili_send_CMD(0xC7);
+    ili_send_data(0x86);
     // MADCTL
-    SPI1_send_CMD(0x36);
-    SPI1_send_data(0x48);
+    ili_send_CMD(0x36);
+    ili_send_data(0x48);
     // VSCRSADD
-    SPI1_send_CMD(0x37);
-    SPI1_send_data(0x00);
+    ili_send_CMD(0x37);
+    ili_send_data(0x00);
     // PIXFMT
-    SPI1_send_CMD(0x3A);
-    SPI1_send_data(0x55);
+    ili_send_CMD(0x3A);
+    ili_send_data(0x55);
     // FRMCTR1
-    SPI1_send_CMD(0xB1);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0x18);
+    ili_send_CMD(0xB1);
+    ili_send_data(0x00);
+    ili_send_data(0x18);
     // DFUNCTR
-    SPI1_send_CMD(0xB6);
-    SPI1_send_data(0x08);
-    SPI1_send_data(0x82);
-    SPI1_send_data(0x27);
-    SPI1_send_CMD(0xF2);
-    SPI1_send_data(0x00);
+    ili_send_CMD(0xB6);
+    ili_send_data(0x08);
+    ili_send_data(0x82);
+    ili_send_data(0x27);
+    ili_send_CMD(0xF2);
+    ili_send_data(0x00);
     // GAMMASET
-    SPI1_send_CMD(0x26);
-    SPI1_send_data(0x01);
+    ili_send_CMD(0x26);
+    ili_send_data(0x01);
     // (Actual gamma settings)
-    SPI1_send_CMD(0xE0);
-    SPI1_send_data(0x0F);
-    SPI1_send_data(0x31);
-    SPI1_send_data(0x2B);
-    SPI1_send_data(0x0C);
-    SPI1_send_data(0x0E);
-    SPI1_send_data(0x08);
-    SPI1_send_data(0x4E);
-    SPI1_send_data(0xF1);
-    SPI1_send_data(0x37);
-    SPI1_send_data(0x07);
-    SPI1_send_data(0x10);
-    SPI1_send_data(0x03);
-    SPI1_send_data(0x0E);
-    SPI1_send_data(0x09);
-    SPI1_send_data(0x00);
-    SPI1_send_CMD(0xE1);
-    SPI1_send_data(0x00);
-    SPI1_send_data(0x0E);
-    SPI1_send_data(0x14);
-    SPI1_send_data(0x03);
-    SPI1_send_data(0x11);
-    SPI1_send_data(0x07);
-    SPI1_send_data(0x31);
-    SPI1_send_data(0xC1);
-    SPI1_send_data(0x48);
-    SPI1_send_data(0x08);
-    SPI1_send_data(0x0F);
-    SPI1_send_data(0x0C);
-    SPI1_send_data(0x31);
-    SPI1_send_data(0x36);
-    SPI1_send_data(0x0F);
+    ili_send_CMD(0xE0);
+    ili_send_data(0x0F);
+    ili_send_data(0x31);
+    ili_send_data(0x2B);
+    ili_send_data(0x0C);
+    ili_send_data(0x0E);
+    ili_send_data(0x08);
+    ili_send_data(0x4E);
+    ili_send_data(0xF1);
+    ili_send_data(0x37);
+    ili_send_data(0x07);
+    ili_send_data(0x10);
+    ili_send_data(0x03);
+    ili_send_data(0x0E);
+    ili_send_data(0x09);
+    ili_send_data(0x00);
+    ili_send_CMD(0xE1);
+    ili_send_data(0x00);
+    ili_send_data(0x0E);
+    ili_send_data(0x14);
+    ili_send_data(0x03);
+    ili_send_data(0x11);
+    ili_send_data(0x07);
+    ili_send_data(0x31);
+    ili_send_data(0xC1);
+    ili_send_data(0x48);
+    ili_send_data(0x08);
+    ili_send_data(0x0F);
+    ili_send_data(0x0C);
+    ili_send_data(0x31);
+    ili_send_data(0x36);
+    ili_send_data(0x0F);
 
     // Exit sleep mode.
     // Display on.
-    SPI1_send_CMD(0x11);
+    ili_send_CMD(0x11);
     delay_cycles(8000000);
-    SPI1_send_CMD(0x29);
+    ili_send_CMD(0x29);
     delay_cycles(8000000);
-    TFT_CS_HIGH();
+    GPIO_STM32.tft.cs_high();
 }
 void __attribute__((optimize("O0"))) delay_cycles(uint32_t cyc) 
 {
@@ -180,21 +182,21 @@ void __attribute__((optimize("O0"))) delay_cycles(uint32_t cyc)
 }
 void ili_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
-    TFT_CS_LOW();
+    GPIO_STM32.tft.cs_low();
 
-    SPI1_send_CMD(0x2A); // Column Address Set
-    SPI1_send_data((uint8_t)(x0 >> 8));
-    SPI1_send_data((uint8_t)(x0 & 0xFF));
-    SPI1_send_data((uint8_t)(x1 >> 8));
-    SPI1_send_data((uint8_t)(x1 & 0xFF));
+    ili_send_CMD(0x2A); // Column Address Set
+    ili_send_data((uint8_t)(x0 >> 8));
+    ili_send_data((uint8_t)(x0 & 0xFF));
+    ili_send_data((uint8_t)(x1 >> 8));
+    ili_send_data((uint8_t)(x1 & 0xFF));
 
-    SPI1_send_CMD(0x2B); // Page Address Set
-    SPI1_send_data((uint8_t)(y0 >> 8));
-    SPI1_send_data((uint8_t)(y0 & 0xFF));
-    SPI1_send_data((uint8_t)(y1 >> 8));
-    SPI1_send_data((uint8_t)(y1 & 0xFF));
+    ili_send_CMD(0x2B); // Page Address Set
+    ili_send_data((uint8_t)(y0 >> 8));
+    ili_send_data((uint8_t)(y0 & 0xFF));
+    ili_send_data((uint8_t)(y1 >> 8));
+    ili_send_data((uint8_t)(y1 & 0xFF));
 
-    TFT_CS_HIGH();
+    GPIO_STM32.tft.cs_high();
 }
 
 void ili9341_fill_screen(uint16_t rgb565)
@@ -203,46 +205,46 @@ void ili9341_fill_screen(uint16_t rgb565)
 
     ili_set_window(0, 0, ILI9341_W - 1, ILI9341_H - 1);
 
-    TFT_CS_LOW();
-    SPI1_send_CMD(0x2C); // Memory Write
+    GPIO_STM32.tft.cs_low();
+    ili_send_CMD(0x2C); // Memory Write
 
     while (n--)
     {
-        SPI1_send_data((uint8_t)(rgb565 >> 8));
-        SPI1_send_data((uint8_t)(rgb565 & 0xFF));
+        ili_send_data((uint8_t)(rgb565 >> 8));
+        ili_send_data((uint8_t)(rgb565 & 0xFF));
     }
 
-    TFT_CS_HIGH();
+    GPIO_STM32.tft.cs_high();
 }
 void reset_TFT(void)
 {
-    TFT_RST_LOW();
-    Delay_ms(12);
-    TFT_RST_HIGH();
-    Delay_ms(122);
+    GPIO_STM32.tft.rst_low();
+    SYSCLK_STM32.delay_ms(12);
+    GPIO_STM32.tft.rst_high();
+    SYSCLK_STM32.delay_ms(122);
 }
 void draw_char(uint16_t x, uint16_t y,const uint8_t *glyph,uint16_t color, uint16_t bg)
 {
     ili_set_window(x, y, x+4, y+6);
-    TFT_CS_LOW();
-    SPI1_send_CMD(0x2C);
+    GPIO_STM32.tft.cs_low();
+    ili_send_CMD(0x2C);
     for (int row = 0; row < 7; row++)
     {
         for (int col = 0; col < 5; col++)
         {
             if (glyph[row] & (1 << (4 - col)))
             {
-                SPI1_send_data(color >> 8);
-                SPI1_send_data(color & 0xFF);
+                ili_send_data(color >> 8);
+                ili_send_data(color & 0xFF);
             }
             else
             {
-                SPI1_send_data(bg >> 8);
-                SPI1_send_data(bg & 0xFF);
+                ili_send_data(bg >> 8);
+                ili_send_data(bg & 0xFF);
             }
         }
     }
-    TFT_CS_HIGH();
+    GPIO_STM32.tft.cs_high();
 }
 void draw_string(uint16_t x, uint16_t y,const char *s,uint16_t color, uint16_t bg)
 {
@@ -298,16 +300,15 @@ void ili_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rgb5
     // Ventana de dibujo
     ili_set_window(x, y, x + w - 1, y + h - 1);
 
-    TFT_CS_LOW();
-    SPI1_send_CMD(0x2C); // Memory Write
+    GPIO_STM32.tft.cs_low();
+    ili_send_CMD(0x2C); // Memory Write
 
     n = (uint32_t)w * (uint32_t)h;
     while (n--) {
-        SPI1_send_data((uint8_t)(rgb565 >> 8));
-        SPI1_send_data((uint8_t)(rgb565 & 0xFF));
+        ili_send_data((uint8_t)(rgb565 >> 8));
+        ili_send_data((uint8_t)(rgb565 & 0xFF));
     }
-
-    TFT_CS_HIGH();
+    GPIO_STM32.tft.cs_high();
 }
 // ili_draw_rect(20, 30, 80, 50, 0x07E0); // verde contorno
 void ili_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t rgb565)
@@ -377,7 +378,7 @@ void ili_plantilla_grafica(void)
 }
 void ili_brightness(uint32_t brightness)
 {
-    pwm_pb0_tim3_set_duty(brightness);
+    PWM_STM32.tft_bl.set_duty(brightness);
 }
 void ili_fill_graphs(void)
 {

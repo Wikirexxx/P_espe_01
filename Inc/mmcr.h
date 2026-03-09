@@ -19,7 +19,7 @@ typedef struct
 #define V_MOTOR_DEFAULTS   { \
     .rpm = 0.0f, \
     .pos = 0u, \
-    .d = 973u, \
+    .d = 500, \
     .hist_rpm = {0} \
 }
 

@@ -1,7 +1,6 @@
 #ifndef SPI_DRIVER_H
 #define SPI_DRIVER_H
 #include <stdint.h>
-#include "gpio_driver.h"
 
 
 void SPI1_gpio_init(void);

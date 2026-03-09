@@ -1,6 +1,5 @@
 #define STM32F405xx
 #include "stm32f4xx.h"
-#include <stdint.h>
 #include "uart_driver.h"
 #define UART_BAUD   115200u
 
