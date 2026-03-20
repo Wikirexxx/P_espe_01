@@ -1,0 +1,28 @@
+@startuml Diagrama de flujo del algoritmo
+title Diagrama de flujo del algoritmo
+
+start
+
+repeat
+  :Generar PWM;
+  :Tim\n(Conteo de pulsos);
+
+  while (Evento menor a t) is (Sí)
+    :Tim\n(Conteo de pulsos);
+  endwhile (No)
+
+  :Calcular la Velocidad;
+  :Calcular RLS;
+  :Acondicionar RLS;
+
+  if (¿Si C >= 10?) then (Sí)
+    :Graficar\nC=0;
+  else (No)
+  endif
+
+  :C++;
+
+repeat while (Continuar) is (Sí)
+
+stop
+@enduml

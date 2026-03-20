@@ -1,0 +1,29 @@
+@startuml
+title Flujo general del sistema RLS
+
+start
+
+while (Sistema en ejecucion?) is (Si)
+
+  :Generar PWM;
+  :TIM\n(Conteo de pulsos);
+
+  while (Evento menor a t?) is (Si)
+    :TIM\n(Conteo de pulsos);
+  endwhile (No)
+
+  :Calcular la velocidad;
+  :Calcular RLS;
+  :Acondicionar RLS;
+
+  if (C >= 10?) then (Si)
+    :Graficar;
+    :C = 0;
+  endif
+
+  :C++;
+
+endwhile (No)
+
+stop
+@enduml

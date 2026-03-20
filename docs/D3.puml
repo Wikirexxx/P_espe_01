@@ -1,0 +1,33 @@
+@startuml Máquina de estados del sistema RLS
+title Máquina de estados del sistema RLS
+
+[*] --> Generar_PWM
+
+Generar_PWM --> Conteo_Pulsos : iniciar muestreo
+
+Conteo_Pulsos --> Conteo_Pulsos : evento < t
+Conteo_Pulsos --> Calcular_Velocidad : evento >= t
+
+Calcular_Velocidad --> Calcular_RLS
+Calcular_RLS --> Acondicionar_RLS
+Acondicionar_RLS --> Verificar_C
+
+Verificar_C --> Graficar : C >= 10
+Verificar_C --> Incrementar_C : C < 10
+
+Graficar --> Reiniciar_C
+Reiniciar_C --> Incrementar_C
+
+Incrementar_C --> Generar_PWM : siguiente ciclo
+
+state Generar_PWM as "Generar PWM"
+state Conteo_Pulsos as "TIM\n(Conteo de pulsos)"
+state Calcular_Velocidad as "Calcular la velocidad"
+state Calcular_RLS as "Calcular RLS"
+state Acondicionar_RLS as "Acondicionar RLS"
+state Verificar_C as "¿C >= 10?"
+state Graficar as "Graficar"
+state Reiniciar_C as "C = 0"
+state Incrementar_C as "C++"
+
+@enduml
