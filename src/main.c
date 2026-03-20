@@ -202,10 +202,6 @@ void TIM4_IRQHandler(void)
                 {
                     if (flag_cMotor == 1)
                     {
-                        //for(i = 0; i < MAX_DIMX; i++)
-                        //{
-                        //    Pe[i] = 0.1f; // reiniciar parámetros a valores iniciales
-                        //}
                     }
                     
                     flag_cMotor = 0;
@@ -223,5 +219,4 @@ void TIM4_IRQHandler(void)
             cont_multtimer = 0;
         }
     }
-    //GPIO_STM32.rgb.r_off();
 }
